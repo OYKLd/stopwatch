@@ -1,121 +1,206 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/scheduler.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const StopwatchApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class StopwatchApp extends StatelessWidget {
+  const StopwatchApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Chronomètre Sportif',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00B4D8),
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const StopwatchScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class StopwatchScreen extends StatefulWidget {
+  const StopwatchScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _StopwatchScreenState createState() => _StopwatchScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _StopwatchScreenState extends State<StopwatchScreen> with SingleTickerProviderStateMixin {
+  final Stopwatch _stopwatch = Stopwatch();
+  late final Ticker _ticker;
+  String _timeString = '00:00:00';
+  bool _isRunning = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Ticker(_updateTime)..stop();
+  }
 
-  void _incrementCounter() {
+  void _updateTime(Duration _) {
+    if (_stopwatch.isRunning) {
+      setState(() {
+        _timeString = _formatTime(_stopwatch.elapsedMilliseconds);
+      });
+    }
+  }
+
+  String _formatTime(int milliseconds) {
+    int hundreds = (milliseconds / 10).truncate();
+    int seconds = (hundreds / 100).truncate();
+    int minutes = (seconds / 60).truncate();
+
+    String minutesStr = (minutes % 60).toString().padLeft(2, '0');
+    String secondsStr = (seconds % 60).toString().padLeft(2, '0');
+    String hundredsStr = (hundreds % 100).toString().padLeft(2, '0');
+
+    return '$minutesStr:$secondsStr:$hundredsStr';
+  }
+
+  void _startStopwatch() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _isRunning = true;
+      _stopwatch.start();
+      _ticker.start();
+    });
+  }
+
+  void _pauseStopwatch() {
+    setState(() {
+      _isRunning = false;
+      _stopwatch.stop();
+      _ticker.stop();
+    });
+  }
+
+  void _resetStopwatch() {
+    setState(() {
+      _isRunning = false;
+      _stopwatch.reset();
+      _timeString = '00:00:00';
+      _ticker.stop();
     });
   }
 
   @override
+  void dispose() {
+    _ticker.dispose();
+    _stopwatch.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            // En-tête
+            Padding(
+              padding: const EdgeInsets.only(top: 30.0),
+              child: Text(
+                'Chronomètre',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: const Color(0xFF212529),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            
+            // Affichage du temps
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                _timeString,
+                key: ValueKey<String>(_timeString),
+                style: const TextStyle(
+                  fontSize: 72,
+                  fontWeight: FontWeight.w300,
+                  color: Color(0xFF212529),
+                  fontFeatures: [
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Boutons de contrôle
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40.0, left: 40, right: 40),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Bouton Reset
+                  _buildControlButton(
+                    icon: Icons.refresh,
+                    onPressed: _resetStopwatch,
+                    backgroundColor: const Color(0xFFE9ECEF),
+                    iconColor: const Color(0xFF212529),
+                  ),
+                  
+                  const SizedBox(width: 30),
+                  
+                  // Bouton Play/Pause
+                  _isRunning
+                      ? _buildControlButton(
+                          icon: Icons.pause,
+                          onPressed: _pauseStopwatch,
+                          backgroundColor: const Color(0xFFFF6B6B),
+                          iconColor: Colors.white,
+                          size: 80,
+                        )
+                      : _buildControlButton(
+                          icon: Icons.play_arrow,
+                          onPressed: _startStopwatch,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          iconColor: Colors.white,
+                          size: 80,
+                        ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color backgroundColor,
+    required Color iconColor,
+    double size = 60,
+  }) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: size * 0.5, color: iconColor),
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
       ),
     );
   }
