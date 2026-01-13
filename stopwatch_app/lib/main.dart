@@ -110,7 +110,7 @@ class _StopwatchScreenState extends State<StopwatchScreen> with SingleTickerProv
             Padding(
               padding: const EdgeInsets.only(top: 30.0),
               child: Text(
-                'Chrono',
+                'Chronomètre',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: const Color(0xFF212529),
                   fontWeight: FontWeight.bold,
